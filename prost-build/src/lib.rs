@@ -127,7 +127,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use log::trace;
-use prost::Message;
+use prost::{ExtensionRegistry, Message};
 use prost_types::{FileDescriptorProto, FileDescriptorSet};
 
 pub use crate::ast::{Comments, Method, Service};
@@ -840,7 +840,9 @@ impl Config {
         }
 
         let buf = fs::read(file_descriptor_set_path)?;
-        let file_descriptor_set = FileDescriptorSet::decode(&*buf).map_err(|error| {
+        let mut registry = ExtensionRegistry::new();
+        prost_types::prost::register_extensions(&mut registry);
+        let file_descriptor_set = FileDescriptorSet::decode_with_extensions(&*buf, registry).map_err(|error| {
             Error::new(
                 ErrorKind::InvalidInput,
                 format!("invalid FileDescriptorSet: {}", error.to_string()),

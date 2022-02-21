@@ -6,6 +6,7 @@ use std::iter;
 use itertools::{Either, Itertools};
 use log::debug;
 use multimap::MultiMap;
+use prost::Extendable;
 use prost_types::field_descriptor_proto::{Label, Type};
 use prost_types::source_code_info::Location;
 use prost_types::{
@@ -440,6 +441,13 @@ impl<'a> CodeGenerator<'a> {
     }
 
     fn append_field(&mut self, fq_message_name: &str, field: FieldDescriptorProto) {
+        let prost_extensions: Option<&::prost_types::prost::ProstField> = field.options.as_ref().and_then(|o| o.extension_data(::prost_types::prost::FIELD).ok());
+
+        let field_name = prost_extensions
+            .and_then(|f| f.field_name.to_owned())
+            .filter(|f| !f.is_empty())
+            .unwrap_or_else(|| to_snake(field.name()));
+
         let type_ = field.r#type();
         let repeated = field.label == Some(Label::Repeated as i32);
         let deprecated = self.deprecated(&field);
@@ -544,7 +552,7 @@ impl<'a> CodeGenerator<'a> {
         self.append_field_attributes(fq_message_name, field.name());
         self.push_indent();
         self.buf.push_str("pub ");
-        self.buf.push_str(&to_snake(field.name()));
+        self.buf.push_str(&field_name);
         self.buf.push_str(": ");
         if repeated {
             self.buf.push_str("::prost::alloc::vec::Vec<");

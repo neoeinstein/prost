@@ -20,6 +20,9 @@ include!("protobuf.rs");
 pub mod compiler {
     include!("compiler.rs");
 }
+pub mod prost {
+    include!("prost.rs");
+}
 
 // The Protobuf `Duration` and `Timestamp` types can't delegate to the standard library equivalents
 // because the Protobuf versions are signed. To make them easier to work with, `From` conversions
